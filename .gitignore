@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente / segredos
+.env
+
+# Arquivos do sistema (Mac)
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Saídas / resultados gerados
+resultado.json
+
+# Cache
+.cache/
+
+# IDE (opcional)
+.vscode/
+.claude/

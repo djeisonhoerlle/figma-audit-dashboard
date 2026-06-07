@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DS Audit Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body style="font-family: Arial; padding: 20px;">
+
+  <h1>Design System Health</h1>
+
+  <input id="fileKeyInput" placeholder="Cole o file key do Figma" style="width: 400px;" />
+  <button onclick="rodarAudit()">Auditar</button>
+
+  <h2 id="score">Aguardando...</h2>
+
+  <h3>Componentes com mais violações</h3>
+
+  <ol id="ranking"></ol>
+
+  <button onclick="verTodos()">Ver todos</button>
+
+  <canvas id="grafico" width="800" height="400"></canvas>
+
+<script>
+  let ordenado = [];
+  let mostrandoTodos = false;
+  let chart = null;
+
+  function renderLista() {
+    const lista = document.getElementById("ranking");
+    lista.innerHTML = "";
+
+    const limite = mostrandoTodos ? ordenado.length : 10;
+
+    ordenado.slice(0, limite).forEach(item => {
+      const li = document.createElement("li");
+      li.innerText = `${item.nome} → ${item.violacoes} violações`;
+      lista.appendChild(li);
+    });
+  }
+
+  function verTodos() {
+    mostrandoTodos = true;
+    renderLista();
+  }
+
+  function rodarAudit() {
+    const fileKey = document.getElementById("fileKeyInput").value;
+
+    if (!fileKey) {
+      alert("Informe um fileKey");
+      return;
+    }
+
+    document.getElementById("score").innerText = "Carregando...";
+
+    fetch("/api/audit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ fileKey })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Erro na API");
+        return res.json();
+      })
+      .then(data => {
+
+        document.getElementById("score").innerText =
+          "Score: " + data.score + "/100";
+
+        const nomes = data.componentes.map(c => c.nome);
+        const valores = data.componentes.map(c => c.violacoes);
+
+        // limpa gráfico anterior
+        if (chart) {
+          chart.destroy();
+        }
+
+        chart = new Chart(document.getElementById("grafico"), {
+          type: "bar",
+          data: {
+            labels: nomes,
+            datasets: [{
+              label: "Violações por componente",
+              data: valores
+            }]
+          }
+        });
+
+        ordenado = [...data.componentes]
+          .sort((a, b) => b.violacoes - a.violacoes);
+
+        mostrandoTodos = false;
+        renderLista();
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("score").innerText = "Erro ao carregar";
+      });
+  }
+</script>
+
+</body>
+</html>
